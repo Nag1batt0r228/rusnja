@@ -8,7 +8,7 @@ from PIL import Image, ImageTk
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-image_path = os.path.join(BASE_DIR, "donbas1.gif")
+os.chdir(BASE_DIR)  # Change the current working directory to the script's directory
 class Game:
     
     def __init__(self):
@@ -20,8 +20,10 @@ class Game:
         self.canvas_width = 1600#self.tk.winfo_screenmmwidth()
         self.canvas = Canvas(self.tk, width=self.canvas_width, height=self.canvas_height, bd=0, highlightthickness=0)
         self.canvas.pack()
-        self.bg = PhotoImage(file = image_path)
-        original_bg = Image.open(image_path)
+        bg_file = "donbas1.gif"
+        original_bg=Image.open(bg_file)
+        #self.bg = PhotoImage(file = image_path)
+        #original_bg = Image.open(image_path)
         resized_bg=original_bg.resize((self.canvas_height,self.canvas_width),Image.Resampling.LANCZOS)
         self.bg = ImageTk.PhotoImage(resized_bg)
         self.canvas.create_image(0, 0, image=self.bg, anchor='nw')
