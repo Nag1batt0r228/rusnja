@@ -1,14 +1,9 @@
 from tkinter import *
 import os
-from tkinter import Tk
 import traceback
 import random 
 import time 
-from PIL import Image, ImageTk
 
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-image_path = os.path.join(BASE_DIR, "donbas1.gif")
 class Game:
     
     def __init__(self):
@@ -20,20 +15,24 @@ class Game:
         self.canvas_width = 1600#self.tk.winfo_screenmmwidth()
         self.canvas = Canvas(self.tk, width=self.canvas_width, height=self.canvas_height, bd=0, highlightthickness=0)
         self.canvas.pack()
-        self.bg = PhotoImage(file = image_path)
-        original_bg = Image.open(image_path)
-        resized_bg=original_bg.resize((self.canvas_height,self.canvas_width),Image.Resampling.LANCZOS)
-        self.bg = ImageTk.PhotoImage(resized_bg)
+        self.bg = PhotoImage(file = "donbas1.gif")
+        #original_bg = Image.open("C:\\Users\\Zenyk\\Desktop\\rusnja\\donbas1.gif")
+       # resized_bg=original_bg.resize((self.canvas_height,self.canvas_width),Image.Resampling.LANCZOS)
+        #self.bg = ImageTk.PhotoImage(resized_bg)
         self.canvas.create_image(0, 0, image=self.bg, anchor='nw')
         self.sprites = []
         self.running = True
-            
+
     def mainloop(self):
         while 1:
             if self.running == True:
                 for sprite in self.sprites:
                     sprite.move()
-                 
+                    #if isinstance(sprite,ManSprite):
+                   #     coords = self.canvas.coords(self.image)
+                    #    print("Man coords in mainloop: ",coords) 
+                     #   if not coords:
+                      #      print("Error: Man is lost")
                 self.tk.update_idletasks()
                 self.tk.update()
                 time.sleep(0.01)
@@ -59,6 +58,7 @@ def within_x(co1,co2):   #зіткнення горизонтально
 def within_y(co1,co2):  #зіткнення вертикально
     if co1.y1 >co2.y1 and co2.y2>co1.y1:
         return True
+    
     elif co1.y1>co2.y1 and co1.y2 <co2.y2:
         return True
     elif co2.y1>co1.y1 and co2.y1 <co1.y2:
@@ -67,7 +67,6 @@ def within_y(co1,co2):  #зіткнення вертикально
             return True
     else:
         return False
-    
 def collid_left(co1,co2):                        #зіткнення зліва
     if within_y(co1,co2):
          if co1.x1 <=co2.x2 and co1.x2 >=co2.x1:
@@ -89,7 +88,7 @@ def collid_top(co1,co2):                         #зіткнення зверх�
 def collid_bottom(y,co1,co2):                      #зіткнення знизу
     if within_x(co1,co2):
              y_calc = co1.y2 + y
-             if y_calc  >=co2.y1 and y_calc <=co2.y2 :
+             if y_calc >=co2.y1 and y_calc <=co2.y2 :
                 return True
              return False
          
@@ -113,7 +112,6 @@ class platformSprite(Sprite):
          
 class ManSprite(Sprite):
     def __init__(self, game):
-    
         Sprite.__init__(self,game)
         self.image_left = [
             PhotoImage(file = "sickman_lf.gif"),
@@ -125,29 +123,17 @@ class ManSprite(Sprite):
             PhotoImage(file = "sickman_rt2.gif"),
             PhotoImage(file = "sickman_rt3.gif")
         ]
-        try:
-            self.image_staylf = (PhotoImage(file = "stay_lf.gif"))
-            self.image_stayrt = (PhotoImage(file = "stay.gif"))
-        except Exception as e:
-            print("Error loading image:", e)
-        self.image_stayrt = PhotoImage(file = "stay.gif")
-        x_spawn = 100
-        y_spawn=400
-        self.coordinates = Coords(x_spawn,y_spawn, x_spawn +27, y_spawn + 30)
-        if x_spawn <0:
-            x_spawn = 0
-        elif x_spawn >self.game.canvas_width:
-            x_spawn = self.game.canvas_width - 27
-        if y_spawn <0:
-            y_spawn = 0
-        elif y_spawn >self.game.canvas_height:
-            y_spawn = self.game.canvas_height - 30
-        self.image = game.canvas.create_image(x_spawn,y_spawn,\
-            image = self.image_staylf,anchor ='nw')
+       # try:
+       #     self.image_staylf = [PhotoImage(file = "stay_lf.gif")]
+       # except Exception as e:
+         #   print("Error loading image:", e)
+       # self.image_stayrt = PhotoImage(file = "stay.gif")
+        self.image = game.canvas.create_image(200,500,\
+            image = self.image_left,anchor ='w')
         self.game.canvas.tag_raise(self.image)
         print ("Man created with image ID: ", self.image)
         print("Man initial coordinates: ", game.canvas.coords(self.image))
-        self.x = 0
+        self.x = -2
         self.y = 0
         self.current_image = 0
         self.current_image_add =1
@@ -162,13 +148,13 @@ class ManSprite(Sprite):
         game.canvas.bind_all('<space>', self.jump)
     def turn_left(self,evt):
         if self.y ==0:
-            self.x =-2 
-            self.last_direct = 'Left'
+            self.x =-2
+       #     self.last_direct = 'Left'
             
     def turn_right(self,evt):
         if self.y ==0:
             self.x=2
-            self.last_direct ='Right'
+        #    self.last_direct ='Right'
     def jump(self,evt):
         if self.y ==0:
             self.y= -4
@@ -200,35 +186,29 @@ class ManSprite(Sprite):
                         image = self.image_right[
                             self.current_image
                         ]) 
-        elif self.x==0 and self.y==0:
-            if self.last_direct == 'Left':
-                self.game.canvas.itemconfig(self.image,image =self.image_staylf)
-            elif self.last_direct == 'Right':
-                self.game.canvas.itemconfig(self.image,image = self.image_stayrt)
-                    
+        
     def coords(self):                                  #зберігання коорд х та у
             xy = self.game.canvas.coords(self.image)
             self.coordinates.x1 = xy[0]
             self.coordinates.y1 = xy[1]
-            self.coordinates.x2 = xy[0] + 27
-            self.coordinates.y2 = xy[1] + 30
+            self.coordinates.x2 = xy[0] +27
+            self.coordinates.y2 = xy[1]+30
             return self.coordinates 
         
     def move(self):                                       # JUMP
             self.animated()
             print("ManSprite move called, current coordinates:", self.game.canvas.coords(self.image))
-            co = self.coords()  
-            
            # co = self.coords()
             #print("curent coords of Man:", co.x1,co.x2,co.y1,co.y2)
             #if co.x1 <0 or co.y1 <0 or co.x2> self.game.canvas_width or co.y2 >self.game.canvas_height:
              #   print("achtung: Man is out")
             if self.y <0:
                 self.jump_count += 1
-                if self.jump_count > 20:
-                    self.y =0    ##
+                if self.jump_count >=20:
+                    self.y =4
             if self.y >0:
                 self.jump_count -=1
+            co = self.coords()
             left = True
             right = True
             top = True
@@ -237,7 +217,6 @@ class ManSprite(Sprite):
             if self.y >0 and co.y2 >=self.game.canvas_height:
                 self.y = 0
                 bottom =False
-                falling = False ##
             elif self.y <0 and co.y1 <=0:
                 self.y =0
                 top =False
@@ -254,32 +233,31 @@ class ManSprite(Sprite):
                 if top and self.y <0 and collid_top(co,sprite_co):
                     self.y = -self.y
                     top = False
-                if bottom and self.y  >0 and collid_bottom(self.y,\
-                    co,sprite_co):
+                if bottom and self.x >0 and collid_bottom(self.y,\
+                        co,sprite_co):
                     self.y = sprite_co.y1 -co.y2
                     if self.y <0:
-                       self.y = 0
-                    bottom = False
-                    top = False
-                if bottom and falling and self.y == 0\
-                    and co.y2 <self.game.canvas_height\
-                    and collid_bottom(1,co,sprite_co):
-                    falling=False       
-                if left and self.x <0 and collid_left(co,sprite_co):
-                    self.x = 0
-                    left = False
-                    if sprite.endgame:
-                        self.game.running = False           #tut 
-                if right and self.x >0 and collid_right(co, sprite_co):
-                    self.x = 0
-                    right= False
-                    if sprite.endgame:
-                        self.game.running =False           # tut endgame was
-            if falling and self.y ==0 and co.y2 <self.game.canvas_height:    ##
-                self.y = 4
-            self.game.canvas.move(self.image,self.x,self.y)    
-                       
-            print(f"Typ sprite.endgame: {type(sprite.endgame)}, of  {sprite.endgame}")
+                        self.y = 0
+                        bottom = False
+                        top = False
+                    if bottom and falling and self.y == 0\
+                        and co.y2 <self.game.canvas_height\
+                        and collid_bottom(1,co,sprite_co):
+                         falling=False       
+                    if left and self.x <0 and collid_left(co,sprite_co):
+                        self.x = 0
+                        left = False
+                        if sprite.endgame:
+                            self.endgame.running = False
+                    if right and self.x >0 and collid_right(co, sprite_co):
+                        self.x = 0
+                        right= False
+                        if sprite.endgame:
+                            self.endgame.running =False
+                if falling and bottom and self.y ==0 and co.y2 <self.game.canvas_height:
+                    self.y = 4
+                self.game.canvas.move(self.image,self.x,self.y)                    
+                    
 class DoorSprite(Sprite):
     def __init__(self, game,photo_image,x,y,width,heigth):
         Sprite.__init__(self,game)
@@ -317,9 +295,9 @@ try:
      flat0 = platformSprite(g,PhotoImage(file = "flat0.gif"),\
          800,20,0,850)
      flat01 = platformSprite(g,PhotoImage(file ="flat0.gif"),\
-         800,20,1500,850)
+         850,20,1500,850)
      flat11 = platformSprite(g,PhotoImage(file = "flat3.gif"),\
-         32,10, 430,490)
+         66,10, 430,490)
      flat12 = platformSprite(g,PhotoImage(file = "flat.gif"),\
          100,10,530,460)
      flat13 = platformSprite(g,PhotoImage(file = "flat2.gif"),\
@@ -329,24 +307,22 @@ try:
      flat15 = platformSprite(g,PhotoImage(file = "flat.gif"),\
          100,10,450,270)
      flat16 = platformSprite(g,PhotoImage(file = "flat2.gif"),\
-         66,10,600,250)
+         100,10,600,250)
      flat17 = platformSprite(g,PhotoImage(file = "flat.gif"),\
          100,10,720,200)
      flat18 = platformSprite(g,PhotoImage(file = "flat3.gif"),\
-         32,10,870,200)
+         100,10,870,200)
      flat19 = platformSprite(g,PhotoImage(file = "flat.gif"),\
          100,10,950,200)
      flat20 = platformSprite(g,PhotoImage(file = "flat3.gif"),\
-         32,10,1070,200)
+         100,10,1070,200)
      flat21 = platformSprite(g,PhotoImage(file = "flat3.gif"),\
-         32,10,1200,200)
+         100,10,1200,200)
      flatboss = platformSprite(g,PhotoImage(file ="bossflat.gif"),\
          300,10,700,450)
      flatboss1 = platformSprite(g,PhotoImage(file ="bossflat.gif"),\
          300,10,1400,200)
      
-    # flattest = platformSprite(g,PhotoImage(file = "flat0.gif"),\
-     #    0,850,20,850)
      g.sprites.append(flat1)
      g.sprites.append(flat2)
      g.sprites.append(flat3)
@@ -372,14 +348,12 @@ try:
      g.sprites.append(flat21)
      g.sprites.append(flatboss)
      g.sprites.append(flatboss1)
-     #g.sprites.append(flattest)
+     
      door = DoorSprite(g,PhotoImage(file = "bunkerdoor_open.gif"),40,30,1550,850)
      g.sprites.append(door)
      sf = ManSprite(g)
      g.sprites.append(sf)
      g.mainloop()
-     
-     
 except Exception as e:
     print(f"Error: {e}")
     traceback.print_exc()
