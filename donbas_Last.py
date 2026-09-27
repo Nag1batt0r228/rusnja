@@ -14,12 +14,14 @@ class Game:
     def __init__(self):
         self.tk = Tk()
         self.tk.title("Smert' rusni")
+        self.tk.attributes('-fullscreen', True)
         self.tk.resizable(0, 0)
         self.tk.wm_attributes('-topmost', 1)
-        self.canvas_height = 900#self.tk.winfo_screenheight()
-        self.canvas_width = 1600#self.tk.winfo_screenmmwidth()
+        self.canvas_height = self.tk.winfo_screenheight()
+        self.canvas_width = self.tk.winfo_screenmmwidth()
         self.canvas = Canvas(self.tk, width=self.canvas_width, height=self.canvas_height, bd=0, highlightthickness=0)
         self.canvas.pack()
+        self.tk.update()
         bg_file = "donbas1.gif"
         original_bg=Image.open(bg_file)
         #self.bg = PhotoImage(file = image_path)
