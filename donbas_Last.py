@@ -348,6 +348,7 @@ try:
          300,10,700,450)
      flatboss1 = platformSprite(g,PhotoImage(file ="bossflat.gif"),\
          300,10,1400,200)
+    # door = DoorSprite(g,PhotoImage(file = "bunkerdoor_open.gif"),40,30,1550,850)
      
     # flattest = platformSprite(g,PhotoImage(file = "flat0.gif"),\
      #    0,850,20,850)
@@ -377,8 +378,7 @@ try:
      g.sprites.append(flatboss)
      g.sprites.append(flatboss1)
      #g.sprites.append(flattest)
-     door = DoorSprite(g,PhotoImage(file = "bunkerdoor_open.gif"),40,30,1550,850)
-     g.sprites.append(door)
+     #g.prites.append(door)
      sf = ManSprite(g)
      g.sprites.append(sf)
      g.mainloop()
