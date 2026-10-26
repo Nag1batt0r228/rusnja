@@ -22,25 +22,31 @@ class Game:
         self.canvas = Canvas(self.tk, width=self.canvas_width, height=self.canvas_height, bd=0, highlightthickness=0)
         self.canvas.pack()
         self.tk.update()
+        self.tk.bind('<Escape>', lambda e: self.tk.destroy())  # Bind Escape key to exit the game
+        self.cansav_width = self.tk.winfo_screenmmwidth()
+        self.canvas_height = self.tk.winfo_screenheight()
+        DESIGN_H = 900
+        self.dy =self.canvas_height - DESIGN_H
         bg_file = "donbas1.gif"
         original_bg=Image.open(bg_file)
         #self.bg = PhotoImage(file = image_path)
         #original_bg = Image.open(image_path)
-        resized_bg=original_bg.resize((self.canvas_height,self.canvas_width),Image.Resampling.LANCZOS)
+        resized_bg=original_bg.resize((self.canvas_width, self.canvas_height),Image.Resampling.LANCZOS)
         self.bg = ImageTk.PhotoImage(resized_bg)
         self.canvas.create_image(0, 0, image=self.bg, anchor='nw')
         self.sprites = []
         self.running = True
             
     def mainloop(self):
-        while 1:
-            if self.running == True:
-                for sprite in self.sprites:
-                    sprite.move()
-                 
+        try:
+            while True:
+                if self.running:
+                    for s in self.sprites:s.move()
                 self.tk.update_idletasks()
                 self.tk.update()
                 time.sleep(0.01)
+        except TclError:
+                pass # Handle the exception gracefully when the window is closed
 class Coords:
     
     def __init__(self,x1 =0,y1=0,x2=0,y2=0):
@@ -49,7 +55,7 @@ class Coords:
         self.y1=y1
         self.y2=y2
 def within_x(co1,co2):   #зіткнення горизонтально
-    if co1.x1 >co2.x2 and co1.x1 <co2.x2:
+    '''if co1.x1 >co2.x2 and co1.x1 <co2.x2:
         return True
     elif co1.x2 >co2.x1 and co1.x2 <co2.x2:
         return True
@@ -58,10 +64,10 @@ def within_x(co1,co2):   #зіткнення горизонтально
     elif co2.x2 >co1.x2 and co2.x2 <co1.x2:
         return True
     else:
-        return False
-        
+        return False'''
+    return (co1.x1 < co2.x2 and co1.x2 > co2.x1)    
 def within_y(co1,co2):  #зіткнення вертикально
-    if co1.y1 >co2.y1 and co2.y2>co1.y1:
+    '''if co1.y1 >co2.y1 and co2.y2>co1.y1:
         return True
     elif co1.y1>co2.y1 and co1.y2 <co2.y2:
         return True
@@ -71,7 +77,8 @@ def within_y(co1,co2):  #зіткнення вертикально
             return True
     else:
         return False
-    
+    '''
+    return (co1.y1 < co2.y2 and co1.y2 > co2.y1)
 def collid_left(co1,co2):                        #зіткнення зліва
     if within_y(co1,co2):
          if co1.x1 <=co2.x2 and co1.x2 >=co2.x1:
@@ -110,14 +117,15 @@ class Sprite:
 class platformSprite(Sprite):
     def __init__(self, game, photo_image,width,height,x,y):
         Sprite.__init__(self,game)
+        y = y + game.dy   ####
         self.photo_image = photo_image
         self.image = game.canvas.create_image(x,y, \
             image = self.photo_image, anchor = 'nw')
-        self.coordinates = Coords(x,y,width +x,height+y)
-         
+        self.coordinates = Coords(x,y, x +photo_image.width(), y + photo_image.height())
+             
 class ManSprite(Sprite):
-    def __init__(self, game):
     
+    def __init__(self, game):
         Sprite.__init__(self,game)
         self.image_left = [
             PhotoImage(file = "sickman_lf.gif"),
@@ -134,9 +142,13 @@ class ManSprite(Sprite):
             self.image_stayrt = (PhotoImage(file = "stay.gif"))
         except Exception as e:
             print("Error loading image:", e)
-        self.image_stayrt = PhotoImage(file = "stay.gif")
+
         x_spawn = 100
         y_spawn=400
+
+        self.width = max(self.image_staylf.width(), self.image_stayrt.width())
+        self.height = max(self.image_staylf.height(), self.image_stayrt.height())
+        
         self.coordinates = Coords(x_spawn,y_spawn, x_spawn +27, y_spawn + 30)
         if x_spawn <0:
             x_spawn = 0
@@ -163,59 +175,53 @@ class ManSprite(Sprite):
         
         game.canvas.bind_all('<KeyPress-Left>', self.turn_left)                #клавіші
         game.canvas.bind_all('<KeyPress-Right>', self.turn_right)
+        game.canvas.bind_all('<KeyRelease-Left>', self.stop)
+        game.canvas.bind_all('<KeyRelease-Right>', self.stop)
         game.canvas.bind_all('<space>', self.jump)
+        self._stop_job = None  # Initialize the _stop_job attribute
     def turn_left(self,evt):
         if self.y ==0:
+            self._stop_job()
             self.x =-2 
             self.last_direct = 'Left'
             
     def turn_right(self,evt):
         if self.y ==0:
+            self._stop_job()
             self.x=2
             self.last_direct ='Right'
+    def stop(self,evt):
+        self._stop_job = self.game.tk.after(30,lambda:setattr(self, 'x',0))
     def jump(self,evt):
         if self.y ==0:
             self.y= -4
             self.jump_count=0
-    def animated(self):            #REMEMBER!     #movement animation
-        if self.x !=0 and self.y ==0:
-            if time.time() - self.last_time >0.1:
+
+    def animated(self):                     #NEW ALGORITHM     
+        c = self.game.canvas
+        if self.y != 0:                      # у повітрі
+            imgs = self.image_left if self.last_direct == 'Left' else self.image_right
+            img = imgs[2]
+        elif self.x != 0:                    # ходьба
+            if time.time() - self.last_time > 0.1:
                 self.last_time = time.time()
-                self.current_image +=self.current_image_add
-                if self.current_image >=2:
-                     self.current_image_add = -1
-                if self.current_image<=0:
-                     self.current_image_add = 1
-            if self.x <0:
-                if self.y != 0:
-                    self.game.canvas.itemconfig(self.image, \
-                        image = self.image_left[2])
-                else:
-                    self.game.canvas.itemconfig(self.image,\
-                        image = self.image_left[
-                            self.current_image
-                            ])
-            elif self.x >0:
-                if self.y !=0:
-                    self.game.canvas.itemconfig(self.image,\
-                        image = self.image_right[2])
-                else:
-                    self.game.canvas.itemconfig(self.image,\
-                        image = self.image_right[
-                            self.current_image
-                        ]) 
-        elif self.x==0 and self.y==0:
-            if self.last_direct == 'Left':
-                self.game.canvas.itemconfig(self.image,image =self.image_staylf)
-            elif self.last_direct == 'Right':
-                self.game.canvas.itemconfig(self.image,image = self.image_stayrt)
-                    
+                self.current_image += self.current_image_add
+                if self.current_image >= 2:
+                    self.current_image_add = -1
+                if self.current_image <= 0:
+                    self.current_image_add = 1
+            imgs = self.image_left if self.x < 0 else self.image_right
+            img = imgs[self.current_image]
+        else:                                # стоїть
+            img = self.image_staylf if self.last_direct == 'Left' else self.image_stayrt
+        c.itemconfig(self.image, image=img)
+
     def coords(self):                                  #зберігання коорд х та у
             xy = self.game.canvas.coords(self.image)
             self.coordinates.x1 = xy[0]
             self.coordinates.y1 = xy[1]
-            self.coordinates.x2 = xy[0] + 27
-            self.coordinates.y2 = xy[1] + 30
+            self.coordinates.x2 = xy[0] + self.width
+            self.coordinates.y2 = xy[1] + self.height
             return self.coordinates 
         
     def move(self):                                       # JUMP
@@ -289,7 +295,7 @@ class DoorSprite(Sprite):
         Sprite.__init__(self,game)
         self.photo_image = photo_image
         self.image = game.canvas.create_image(x,y,image = self.photo_image,anchor ='nw')
-        self.coordinates = Coords(x,y,x+(width/2),y +heigth)
+        self.coordinates = Coords(x,y,x+photo_image.width ,y +photo_image.height)
         self.endgame = True
 
         
